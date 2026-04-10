@@ -30,3 +30,44 @@
       }
     }
   }
+
+------------------------------------------------
+
+pipeline {    
+    agent any
+    stages {
+      stage('Build') {                    
+        steps { echo 'building' }
+      }                                                                                               
+      stage('Pick tag') {                                                                          
+        steps {   
+          script {
+            def REPO_NAME = input(
+              message: 'Enter the Quay repository name',
+              parameters: [
+                string(name: 'REPO_NAME', defaultValue: 'myapp', description: 'Quay repository')   
+              ]
+            )
+
+            env.IMAGE_TAG = input(
+              message: 'Choose Quay tag',
+              parameters: [
+                [$class: 'QuayImageParameterDefinition',
+                 name: 'IMAGE_TAG',
+                 quayEndpoint: 'http://localhost:8080',
+                 organization: 'mytag',
+                 repository:   REPO_NAME,
+                 credentialsId: 'quay-id',
+                 tagLimit: 20,
+                 defaultTag: 'latest']
+              ]
+            )
+          }
+        }
+      }
+
+      stage('Deploy') {
+        steps { echo "Using ${env.IMAGE_TAG}" }
+      }
+    }
+  }
