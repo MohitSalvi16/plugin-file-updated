@@ -1,0 +1,32 @@
+  pipeline {
+    agent any
+    stages {
+      stage('Build') {
+        steps { echo 'building' }
+      }
+
+      stage('Pick tag') {
+        steps {
+          script {
+            env.IMAGE_TAG = input(
+              message: 'Choose Quay tag',
+              parameters: [
+                [$class: 'QuayImageParameterDefinition',
+                 name: 'IMAGE_TAG',
+                 quayEndpoint: 'http://localhost:8080',
+                 organization: 'mytag',
+                 repository:   'myapp',
+                 credentialsId: 'quay-id',
+                 tagLimit: 20,
+                 defaultTag: 'latest']
+              ]
+            )
+          }
+        }
+      }
+
+      stage('Deploy') {
+        steps { echo "Using ${env.IMAGE_TAG}" }
+      }
+    }
+  }
