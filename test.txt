@@ -71,3 +71,48 @@ pipeline {
       }
     }
   }
+
+
+--------------------------------------------------------------
+
+pipeline {                                                                                                             agent any                                                                                                        
+    stages {                                                                                                               stage('Build') {
+        steps { echo 'building' }                                                                                    
+      }
+
+      stage('Pick repo and tag') {
+        steps {
+          script {
+            def picked = input(
+              message: 'Pick repository and tag',
+              parameters: [
+                choice(
+                  name: 'REPO_NAME',
+                  choices: ['myapp', 'myapp1', 'myapp2','myapp3'],
+                  description: 'Quay repository'
+                ),
+                [$class: 'QuayImageParameterDefinition',
+                 name: 'IMAGE_TAG',
+                 quayEndpoint: 'http://localhost:8080',
+                 organization: 'mytag',
+                 repository: 'myapp',
+                 credentialsId: 'quay-id',
+                 tagLimit: 20,
+                 defaultTag: 'latest']
+              ]
+            )
+            env.REPO_NAME = picked.REPO_NAME
+            env.IMAGE_TAG = picked.IMAGE_TAG
+          }
+        }
+      }
+
+      stage('Deploy') {
+        steps {
+          echo "Repo: ${env.REPO_NAME}"
+          echo "Tag:  ${env.IMAGE_TAG}"
+        }
+      }
+    }
+  }
+
