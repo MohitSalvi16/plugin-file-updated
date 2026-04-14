@@ -116,3 +116,90 @@ pipeline {                                                                      
     }
   }
 
+--------------------------------------------
+
+pipeline {                                          
+    agent any
+    stages {
+      stage('Build') {
+        steps { echo 'building' }
+      }
+
+      stage('Pick repo and tag') {
+        steps {
+          script {
+            def picked = input(
+              message: 'Pick details',
+              parameters: [
+                choice(
+                  name: 'REPO_NAME',
+                  choices:
+  ['myapp','myapp1','myapp2','myapp3'],
+                  description: 'Quay repo'
+                ),
+                [$class:
+  'QuayImageParameterDefinition',
+                 name: 'IMAGE_TAG',
+                 quayEndpoint:
+  'http://localhost:8080',
+                 organization: 'mytag',
+                 repository: 'myapp',
+                 credentialsId: 'quay-id',
+                 tagLimit: 20,
+                 defaultTag: 'latest'],
+                choice(
+                  name: 'NAMESPACE',
+                  choices:
+  ['default','dev-ns','staging-ns','prod-ns'],        
+                  description: 'K8s namespace'        
+                ),
+                choice(
+                  name: 'ENVIRONMENT',
+                  choices:
+  ['dev','qa','staging','production'],
+                  description: 'Target env'
+                ),
+                text(
+                  name: 'EXCEPTION_REASON',
+                  defaultValue: '',
+                  description: 'Exception reason'     
+                ),
+                string(
+                  name: 'WRITE_PARAMETER',
+                  defaultValue: '',
+                  description: 'Free-form value'      
+                ),
+                booleanParam(
+                  name: 'DRY_RUN',
+                  defaultValue: false,
+                  description: 'Dry run only'
+                )
+              ]
+            )
+            env.REPO_NAME        = picked.REPO_NAME   
+            env.IMAGE_TAG        = picked.IMAGE_TAG   
+            env.NAMESPACE        = picked.NAMESPACE   
+            env.ENVIRONMENT      = picked.ENVIRONMENT 
+            env.EXCEPTION_REASON =
+  picked.EXCEPTION_REASON
+            env.WRITE_PARAMETER  =
+  picked.WRITE_PARAMETER
+            env.DRY_RUN          =
+  picked.DRY_RUN.toString()
+          }
+        }
+      }
+
+      stage('Deploy') {
+        steps {
+          echo "Repo:        ${env.REPO_NAME}"        
+          echo "Tag:         ${env.IMAGE_TAG}"        
+          echo "Namespace:   ${env.NAMESPACE}"        
+          echo "Environment: ${env.ENVIRONMENT}"      
+          echo "Exception:   ${env.EXCEPTION_REASON}" 
+          echo "Write param: ${env.WRITE_PARAMETER}"  
+          echo "Dry run:     ${env.DRY_RUN}"
+        }
+      }
+    }
+  }
